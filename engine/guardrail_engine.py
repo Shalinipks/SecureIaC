@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 
-CHECKOV = r"D:\SecureIaC\.venv\Scripts\checkov.cmd"
+CHECKOV = "checkov"
 
 
 def run_checkov():
