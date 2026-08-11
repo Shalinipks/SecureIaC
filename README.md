@@ -10,7 +10,7 @@ SecureIaC is a security framework designed to detect security vulnerabilities an
 - Terraform
 - GitHub Actions
 - Checkov
-- TFLint
+- TFLintt 
 - Gitleaks
 - AWS
 
