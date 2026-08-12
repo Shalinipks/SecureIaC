@@ -28,10 +28,8 @@ jobs:
         uses: terraform-linters/setup-tflint@v4
 
       - name: Install Gitleaks
-        run :  |
-    curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/scripts/install.sh | sh -s -- -b /usr/local/bin
-        uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/scripts/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Run SecureIaC Guardrail Engine
         run: python engine/guardrail_engine.py
