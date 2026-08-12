@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Checkov
         run: pip install checkov
-
+s
       - name: Install TFLint
         uses: terraform-linters/setup-tflint@v4
 
