@@ -1,28 +1,34 @@
-import subprocess
-import shutil
 import os
-import sys
+import shutil
+import subprocess
 from pathlib import Path
 
 
-CHECKOV = "checkov"
-
-
 def run_checkov():
-    print("\n🔍 Running Checkov...\n")
+    print("🔍 Running Checkov...")
+
+    checkov = shutil.which("checkov")
+
+    if not checkov:
+        raise FileNotFoundError("Checkov executable not found")
 
     return subprocess.run(
-        [CHECKOV, "-d", "terraform"],
+        [checkov, "-d", ".", "--quiet"],
         capture_output=True,
         text=True
     )
 
 
 def run_tflint():
-    print("\n🔍 Running TFLint...\n")
+    print("🔍 Running TFLint...")
+
+    tflint = shutil.which("tflint")
+
+    if not tflint:
+        raise FileNotFoundError("TFLint executable not found")
 
     return subprocess.run(
-        ["tflint", "--chdir=terraform"],
+        [tflint],
         capture_output=True,
         text=True
     )
@@ -54,29 +60,53 @@ def main():
     tflint = run_tflint()
     gitleaks = run_gitleaks()
 
+    print("\n===== SecureIaC Guardrail Report =====")
+
+    print("\n--- Checkov ---")
     print(checkov.stdout)
+
+    if checkov.stderr:
+        print(checkov.stderr)
+
+    print("\n--- TFLint ---")
     print(tflint.stdout)
+
+    if tflint.stderr:
+        print(tflint.stderr)
+
+    print("\n--- Gitleaks ---")
     print(gitleaks.stdout)
 
-    report = report_folder / "security_report.txt"
+    if gitleaks.stderr:
+        print(gitleaks.stderr)
 
-    with open(report, "w", encoding="utf-8") as file:
-        file.write("===== CHECKOV RESULTS =====\n")
-        file.write(checkov.stdout)
+    # Save reports
+    (report_folder / "checkov_report.txt").write_text(
+        checkov.stdout + checkov.stderr
+    )
 
-        file.write("\n\n===== TFLINT RESULTS =====\n")
-        file.write(tflint.stdout)
+    (report_folder / "tflint_report.txt").write_text(
+        tflint.stdout + tflint.stderr
+    )
 
-        file.write("\n\n===== GITLEAKS RESULTS =====\n")
-        file.write(gitleaks.stdout)
+    (report_folder / "gitleaks_report.txt").write_text(
+        gitleaks.stdout + gitleaks.stderr
+    )
 
-    if checkov.returncode != 0 or tflint.returncode != 0 or gitleaks.returncode != 0:
-        print("\n❌ SECURITY/CODE QUALITY ISSUES DETECTED!")
-        print(f"📄 Report saved to: {report}")
-        sys.exit(1)
+    # Fail the workflow if any security check fails
+    if checkov.returncode != 0:
+        print("\n❌ Checkov found security issues.")
+        raise SystemExit(1)
 
-    print("\n✅ ALL CHECKS PASSED!")
-    print(f"📄 Report saved to: {report}")
+    if tflint.returncode != 0:
+        print("\n❌ TFLint found issues.")
+        raise SystemExit(1)
+
+    if gitleaks.returncode != 0:
+        print("\n❌ Gitleaks found secrets or sensitive information.")
+        raise SystemExit(1)
+
+    print("\n✅ All SecureIaC security checks passed successfully.")
 
 
 if __name__ == "__main__":
