@@ -1,4 +1,6 @@
 import subprocess
+import shutil
+import os
 import sys
 from pathlib import Path
 
@@ -27,10 +29,18 @@ def run_tflint():
 
 
 def run_gitleaks():
-    print("\n🔍 Running Gitleaks...\n")
+    print("🔍 Running Gitleaks...")
+
+    gitleaks = shutil.which("gitleaks")
+
+    if not gitleaks:
+        if os.path.exists("/usr/local/bin/gitleaks"):
+            gitleaks = "/usr/local/bin/gitleaks"
+        else:
+            raise FileNotFoundError("Gitleaks executable not found")
 
     return subprocess.run(
-        ["gitleaks", "dir", "engine"],
+        [gitleaks, "dir", ".", "--no-banner"],
         capture_output=True,
         text=True
     )
