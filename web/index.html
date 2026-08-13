@@ -572,39 +572,74 @@ No scan performed yet.
 
 </main>
 <section id="documentation" class="documentation">
+    
+
     <div class="results-header">
-        <span>DOCUMENTATION</span>
-        <h2>How SecureIaC Works</h2>
-        
+    <span>DOCUMENTATION</span>
+    <h2>How SecureIaC Works</h2>
+    <p>
+        SecureIaC is a shift-left security platform that analyzes
+        Terraform Infrastructure as Code before cloud deployment.
+    </p>
+</div>
+
+<div class="metrics">
+
+    <div class="card">
+        <div class="card-label">01</div>
+        <div class="card-value">Write</div>
+        <p>
+            Write or generate your Terraform Infrastructure as Code
+            using your preferred development environment or AI assistant.
+        </p>
     </div>
 
-    <div class="metrics">
-
-        <div class="card">
-            <div class="card-label">01</div>
-            <div class="card-value">Write</div>
-            <p>Paste or upload your Terraform code.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-label">02</div>
-            <div class="card-value">Scan</div>
-            <p>SecureIaC runs Checkov, TFLint and Gitleaks.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-label">03</div>
-            <div class="card-value">Analyze</div>
-            <p>Review security issues and configuration findings.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-label">04</div>
-            <div class="card-value">Secure</div>
-            <p>Fix the findings before deploying your infrastructure.</p>
-        </div>
-
+    <div class="card">
+        <div class="card-label">02</div>
+        <div class="card-value">Submit</div>
+        <p>
+            Paste your Terraform code into SecureIaC or upload a
+            <strong>.tf</strong> file through the web interface.
+        </p>
     </div>
+
+    <div class="card">
+        <div class="card-label">03</div>
+        <div class="card-value">Scan</div>
+        <p>
+            SecureIaC analyzes your Terraform using Checkov, TFLint
+            and Gitleaks to identify security and configuration issues.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-label">04</div>
+        <div class="card-value">Analyze</div>
+        <p>
+            Review the security status, individual tool results and
+            detailed findings from the automated scan.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-label">05</div>
+        <div class="card-value">Fix</div>
+        <p>
+            Correct the identified vulnerabilities, misconfigurations
+            and exposed secrets in your Terraform code.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-label">06</div>
+        <div class="card-value">Deploy Safely</div>
+        <p>
+            Rescan the corrected Terraform and proceed toward deployment
+            only after the required security checks pass.
+        </p>
+    </div>
+
+</div>
 </section>
 <footer>
     SecureIaC • Automated Security for AI-Generated IaC • Built for safer infrastructure
