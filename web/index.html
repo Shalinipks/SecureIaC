@@ -403,11 +403,17 @@
     </div>
 
     <nav>
-        <a href="#scanner">Scanner</a>
-        <a href="#results">Results</a>
-        <a href="#">Documentation</a>
-        <a href="#">GitHub</a>
-    </nav>
+    <a href="#scanner">Scanner</a>
+    <a href="#results">Results</a>
+
+    <a href="#documentation">Documentation</a>
+
+    <a href="https://github.com/Shalinipks/SecureIaC"
+       target="_blank"
+       rel="noopener noreferrer">
+        GitHub ↗
+    </a>
+</nav>
 </header>
 
 <section class="hero">
@@ -565,7 +571,44 @@ No scan performed yet.
     </section>
 
 </main>
+<section id="documentation" class="documentation">
+    <div class="results-header">
+        <span>DOCUMENTATION</span>
+        <h2>How SecureIaC Works</h2>
+        <p>
+            SecureIaC automatically analyzes Terraform Infrastructure as Code
+            before deployment and identifies security risks.
+        </p>
+    </div>
 
+    <div class="metrics">
+
+        <div class="card">
+            <div class="card-label">01</div>
+            <div class="card-value">Write</div>
+            <p>Paste or upload your Terraform code.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-label">02</div>
+            <div class="card-value">Scan</div>
+            <p>SecureIaC runs Checkov, TFLint and Gitleaks.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-label">03</div>
+            <div class="card-value">Analyze</div>
+            <p>Review security issues and configuration findings.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-label">04</div>
+            <div class="card-value">Secure</div>
+            <p>Fix the findings before deploying your infrastructure.</p>
+        </div>
+
+    </div>
+</section>
 <footer>
     SecureIaC • Automated Security for AI-Generated IaC • Built for safer infrastructure
 </footer>
