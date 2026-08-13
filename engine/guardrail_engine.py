@@ -46,10 +46,11 @@ def run_gitleaks():
             raise FileNotFoundError("Gitleaks executable not found")
 
     return subprocess.run(
-        [gitleaks, "dir", ".", "--no-banner"],
-        capture_output=True,
-        text=True
-    )
+    [gitleaks, "dir", ".", "--no-banner", "--gitleaks-ignore-path", ".gitignore"],
+    capture_output=True,
+    text=True
+)
+
 
 
 def main():
@@ -60,54 +61,41 @@ def main():
     tflint = run_tflint()
     gitleaks = run_gitleaks()
 
-    print("\n===== SecureIaC Guardrail Report =====")
+    report = f"""
+========================================
+       SecureIaC Guardrail Report
+========================================
 
-    print("\n--- Checkov ---")
-    print(checkov.stdout)
+--- Checkov ---
+{checkov.stdout}
+{checkov.stderr}
 
-    if checkov.stderr:
-        print(checkov.stderr)
+--- TFLint ---
+{tflint.stdout}
+{tflint.stderr}
 
-    print("\n--- TFLint ---")
-    print(tflint.stdout)
+--- Gitleaks ---
+{gitleaks.stdout}
+{gitleaks.stderr}
 
-    if tflint.stderr:
-        print(tflint.stderr)
+========================================
+"""
 
-    print("\n--- Gitleaks ---")
-    print(gitleaks.stdout)
+    report_file = report_folder / "guardrail_report.txt"
+    report_file.write_text(report, encoding="utf-8")
 
-    if gitleaks.stderr:
-        print(gitleaks.stderr)
+    print(report)
 
-    # Save reports
-    (report_folder / "checkov_report.txt").write_text(
-        checkov.stdout + checkov.stderr
-    )
-
-    (report_folder / "tflint_report.txt").write_text(
-        tflint.stdout + tflint.stderr
-    )
-
-    (report_folder / "gitleaks_report.txt").write_text(
-        gitleaks.stdout + gitleaks.stderr
-    )
-
-    # Fail the workflow if any security check fails
     if checkov.returncode != 0:
-        print("\n❌ Checkov found security issues.")
+        print("❌ Checkov found security issues.")
         raise SystemExit(1)
 
     if tflint.returncode != 0:
-        print("\n❌ TFLint found issues.")
+        print("❌ TFLint found issues.")
         raise SystemExit(1)
 
     if gitleaks.returncode != 0:
-        print("\n❌ Gitleaks found secrets or sensitive information.")
+        print("❌ Gitleaks found secrets.")
         raise SystemExit(1)
 
-    print("\n✅ All SecureIaC security checks passed successfully.")
-
-
-if __name__ == "__main__":
-    main()
+    print("✅ All security checks passed.")
