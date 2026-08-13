@@ -46,19 +46,31 @@ def run_gitleaks():
             raise FileNotFoundError("Gitleaks executable not found")
 
     return subprocess.run(
-    [gitleaks, "dir", ".", "--no-banner", "--gitleaks-ignore-path", ".gitignore"],
-    capture_output=True,
-    text=True
-)
-
+        [
+            gitleaks,
+            "dir",
+            ".",
+            "--no-banner",
+            "--gitleaks-ignore-path",
+            ".gitignore"
+        ],
+        capture_output=True,
+        text=True
+    )
 
 
 def main():
-    report_folder = Path("reports")
-    report_folder.mkdir(exist_ok=True)
 
+    report_folder = Path("reports")
+    report_folder.mkdir(parents=True, exist_ok=True)
+
+    print("🔍 Running Checkov...")
     checkov = run_checkov()
+
+    print("🔍 Running TFLint...")
     tflint = run_tflint()
+
+    print("🔍 Running Gitleaks...")
     gitleaks = run_gitleaks()
 
     report = f"""
@@ -66,26 +78,56 @@ def main():
        SecureIaC Guardrail Report
 ========================================
 
---- Checkov ---
+CHECKOV
+----------------------------------------
+Return Code: {checkov.returncode}
+
 {checkov.stdout}
+
 {checkov.stderr}
 
---- TFLint ---
+
+TFLINT
+----------------------------------------
+Return Code: {tflint.returncode}
+
 {tflint.stdout}
+
 {tflint.stderr}
 
---- Gitleaks ---
+
+GITLEAKS
+----------------------------------------
+Return Code: {gitleaks.returncode}
+
 {gitleaks.stdout}
+
 {gitleaks.stderr}
+
+
+========================================
+             FINAL RESULT
+========================================
+
+Checkov : {"FAILED" if checkov.returncode != 0 else "PASSED"}
+TFLint  : {"FAILED" if tflint.returncode != 0 else "PASSED"}
+Gitleaks: {"FAILED" if gitleaks.returncode != 0 else "PASSED"}
 
 ========================================
 """
 
+    # Always create the report BEFORE deciding whether to fail
     report_file = report_folder / "guardrail_report.txt"
-    report_file.write_text(report, encoding="utf-8")
+
+    report_file.write_text(
+        report,
+        encoding="utf-8"
+    )
 
     print(report)
+    print(f"📄 Report created: {report_file}")
 
+    # Security gate
     if checkov.returncode != 0:
         print("❌ Checkov found security issues.")
         raise SystemExit(1)
@@ -99,3 +141,7 @@ def main():
         raise SystemExit(1)
 
     print("✅ All security checks passed.")
+
+
+if __name__ == "__main__":
+    main()
