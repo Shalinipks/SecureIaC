@@ -1,64 +1,3 @@
-import os
-import shutil
-import subprocess
-from pathlib import Path
-
-
-def run_checkov():
-    print("🔍 Running Checkov...")
-
-    checkov = shutil.which("checkov")
-
-    if not checkov:
-        raise FileNotFoundError("Checkov executable not found")
-
-    return subprocess.run(
-        [checkov, "-d", ".", "--quiet"],
-        capture_output=True,
-        text=True
-    )
-
-
-def run_tflint():
-    print("🔍 Running TFLint...")
-
-    tflint = shutil.which("tflint")
-
-    if not tflint:
-        raise FileNotFoundError("TFLint executable not found")
-
-    return subprocess.run(
-        [tflint],
-        capture_output=True,
-        text=True
-    )
-
-
-def run_gitleaks():
-    print("🔍 Running Gitleaks...")
-
-    gitleaks = shutil.which("gitleaks")
-
-    if not gitleaks:
-        if os.path.exists("/usr/local/bin/gitleaks"):
-            gitleaks = "/usr/local/bin/gitleaks"
-        else:
-            raise FileNotFoundError("Gitleaks executable not found")
-
-    return subprocess.run(
-        [
-            gitleaks,
-            "dir",
-            ".",
-            "--no-banner",
-            "--gitleaks-ignore-path",
-            ".gitignore"
-        ],
-        capture_output=True,
-        text=True
-    )
-
-
 def main():
     report_folder = Path("reports")
     report_folder.mkdir(exist_ok=True)
@@ -74,18 +13,21 @@ def main():
 
 --- Checkov ---
 {checkov.stdout}
+{checkov.stderr}
 
 --- TFLint ---
 {tflint.stdout}
+{tflint.stderr}
 
 --- Gitleaks ---
 {gitleaks.stdout}
+{gitleaks.stderr}
 
 ========================================
 """
 
     report_file = report_folder / "guardrail_report.txt"
-    report_file.write_text(report)
+    report_file.write_text(report, encoding="utf-8")
 
     print(report)
 
@@ -102,7 +44,3 @@ def main():
         raise SystemExit(1)
 
     print("✅ All security checks passed.")
-
-
-if __name__ == "__main__":
-    main()
