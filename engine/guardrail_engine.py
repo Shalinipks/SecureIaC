@@ -60,17 +60,11 @@ def run_gitleaks():
 
 
 def main():
-
     report_folder = Path("reports")
-    report_folder.mkdir(parents=True, exist_ok=True)
+    report_folder.mkdir(exist_ok=True)
 
-    print("🔍 Running Checkov...")
     checkov = run_checkov()
-
-    print("🔍 Running TFLint...")
     tflint = run_tflint()
-
-    print("🔍 Running Gitleaks...")
     gitleaks = run_gitleaks()
 
     report = f"""
@@ -78,56 +72,23 @@ def main():
        SecureIaC Guardrail Report
 ========================================
 
-CHECKOV
-----------------------------------------
-Return Code: {checkov.returncode}
-
+--- Checkov ---
 {checkov.stdout}
 
-{checkov.stderr}
-
-
-TFLINT
-----------------------------------------
-Return Code: {tflint.returncode}
-
+--- TFLint ---
 {tflint.stdout}
 
-{tflint.stderr}
-
-
-GITLEAKS
-----------------------------------------
-Return Code: {gitleaks.returncode}
-
+--- Gitleaks ---
 {gitleaks.stdout}
-
-{gitleaks.stderr}
-
-
-========================================
-             FINAL RESULT
-========================================
-
-Checkov : {"FAILED" if checkov.returncode != 0 else "PASSED"}
-TFLint  : {"FAILED" if tflint.returncode != 0 else "PASSED"}
-Gitleaks: {"FAILED" if gitleaks.returncode != 0 else "PASSED"}
 
 ========================================
 """
 
-    # Always create the report BEFORE deciding whether to fail
     report_file = report_folder / "guardrail_report.txt"
-
-    report_file.write_text(
-        report,
-        encoding="utf-8"
-    )
+    report_file.write_text(report)
 
     print(report)
-    print(f"📄 Report created: {report_file}")
 
-    # Security gate
     if checkov.returncode != 0:
         print("❌ Checkov found security issues.")
         raise SystemExit(1)
