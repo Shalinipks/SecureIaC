@@ -9,12 +9,12 @@ app = Flask(__name__, static_folder=".")
 
 def find_tool(name):
     """Find a security tool available on the system."""
+
     path = shutil.which(name)
 
     if path:
         return path
 
-    # Windows fallback for WinGet portable installations
     local_app_data = os.environ.get("LOCALAPPDATA", "")
 
     search_root = os.path.join(
@@ -26,10 +26,47 @@ def find_tool(name):
 
     if os.path.exists(search_root):
         for root, dirs, files in os.walk(search_root):
-            if name.lower() + ".exe" in [f.lower() for f in files]:
-                return os.path.join(root, name + ".exe")
+            for file in files:
+                if file.lower() in {
+                    name.lower(),
+                    name.lower() + ".exe",
+                    name.lower() + ".cmd"
+                }:
+                    return os.path.join(root, file)
 
     return None
+
+
+def run_command(command):
+    """Run a security command safely."""
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+
+        return {
+            "returncode": result.returncode,
+            "stdout": result.stdout or "",
+            "stderr": result.stderr or ""
+        }
+
+    except subprocess.TimeoutExpired:
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "Security scan timed out after 120 seconds."
+        }
+
+    except Exception as error:
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": str(error)
+        }
 
 
 def run_checkov(folder):
@@ -45,7 +82,8 @@ def run_checkov(folder):
     return run_command([
         tool,
         "-d",
-        folder
+        folder,
+        "--compact"
     ])
 
 
@@ -81,38 +119,10 @@ def run_gitleaks(folder):
         "detect",
         "--source",
         folder,
-        "--no-banner"
+        "--no-banner",
+        "--exit-code",
+        "1"
     ])
-
-
-def run_command(command):
-    try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=120
-        )
-
-        return {
-            "returncode": result.returncode,
-            "stdout": result.stdout,
-            "stderr": result.stderr
-        }
-
-    except subprocess.TimeoutExpired:
-        return {
-            "returncode": 1,
-            "stdout": "",
-            "stderr": "Security scan timed out after 120 seconds."
-        }
-
-    except Exception as error:
-        return {
-            "returncode": 1,
-            "stdout": "",
-            "stderr": str(error)
-        }
 
 
 @app.route("/")
@@ -163,17 +173,17 @@ def scan():
         checkov_output = (
             checkov["stdout"] +
             checkov["stderr"]
-        )
+        ).strip()
 
         tflint_output = (
             tflint["stdout"] +
             tflint["stderr"]
-        )
+        ).strip()
 
         gitleaks_output = (
             gitleaks["stdout"] +
             gitleaks["stderr"]
-        )
+        ).strip()
 
         checks = {
             "checkov": checkov["returncode"] == 0,
@@ -206,50 +216,61 @@ Status: {status}
 CHECKOV
 ----------------------------------------
 
-{checkov_output}
+Status: {"PASSED" if checks["checkov"] else "ISSUES DETECTED"}
+
+{checkov_output if checkov_output else "No Checkov findings."}
 
 ----------------------------------------
 TFLINT
 ----------------------------------------
 
-{tflint_output}
+Status: {"PASSED" if checks["tflint"] else "ISSUES DETECTED"}
+
+{tflint_output if tflint_output else "No TFLint findings."}
 
 ----------------------------------------
 GITLEAKS
 ----------------------------------------
 
-{gitleaks_output}
+Status: {"PASSED" if checks["gitleaks"] else "ISSUES DETECTED"}
+
+{gitleaks_output if gitleaks_output else "No secrets detected."}
 
 ========================================
 """
 
+        print("\n" + report)
+
         return jsonify({
-            "success": True,
-            "score": score,
-            "status": status,
+    "success": True,
+    "score": score,
+    "status": status,
 
-            "checks": checks,
+    "passed": score == 100,
 
-            "checkov": {
-                "passed": checks["checkov"],
-                "output": checkov_output
-            },
+    "checks": checks,
 
-            "tflint": {
-                "passed": checks["tflint"],
-                "output": tflint_output
-            },
+    "checkov": {
+        "passed": checks["checkov"],
+        "output": checkov_output
+    },
 
-            "gitleaks": {
-                "passed": checks["gitleaks"],
-                "output": gitleaks_output
-            },
+    "tflint": {
+        "passed": checks["tflint"],
+        "output": tflint_output
+    },
 
-            "report": report
-        })
+    "gitleaks": {
+        "passed": checks["gitleaks"],
+        "output": gitleaks_output
+    },
+
+    "report": report
+})
 
 
 if __name__ == "__main__":
+
     print("\n========================================")
     print("        SecureIaC Web Scanner")
     print("========================================")
