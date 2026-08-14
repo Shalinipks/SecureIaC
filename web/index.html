@@ -643,14 +643,21 @@ No scan performed yet.
 </footer>
 
 
+```html
 <script>
 
 const codeBox = document.getElementById("terraformCode");
 const scanButton = document.getElementById("scanButton");
 const loader = document.getElementById("loader");
 const results = document.getElementById("results");
-
 const fileInput = document.getElementById("fileInput");
+
+let latestReport = "";
+
+
+/* ================================
+   FILE UPLOAD
+================================ */
 
 fileInput.addEventListener("change", function () {
 
@@ -667,6 +674,10 @@ fileInput.addEventListener("change", function () {
     reader.readAsText(file);
 });
 
+
+/* ================================
+   SECURITY SCAN
+================================ */
 
 scanButton.addEventListener("click", async function () {
 
@@ -701,57 +712,160 @@ scanButton.addEventListener("click", async function () {
 
         });
 
+
+        if (!response.ok) {
+            throw new Error(
+                "Server returned HTTP " + response.status
+            );
+        }
+
+
         const data = await response.json();
+
 
         if (data.error) {
             throw new Error(data.error);
         }
 
-        latestReport = data.report;
 
-document.getElementById("output").textContent =
-    data.report || "No findings returned.";
+        /* ================================
+           SECURITY REPORT
+        ================================= */
 
-        if (data.passed) {
+        latestReport = data.report || "";
 
-            document.getElementById("score").textContent = "100";
-            document.getElementById("scoreText").textContent = "Secure";
-            document.getElementById("overallStatus").textContent =
-                "✓ No Checkov violations";
+        document.getElementById("output").textContent =
+            latestReport || "No findings returned.";
 
-            document.getElementById("checkovStatus").textContent =
-                "✓ PASSED";
 
-        } else {
+        /* ================================
+           INDIVIDUAL TOOL RESULTS
+        ================================= */
 
-            document.getElementById("score").textContent = "—";
-            document.getElementById("scoreText").textContent =
-                "Needs Attention";
+        const checkovPassed =
+            data.checkov &&
+            data.checkov.passed === true;
 
-            document.getElementById("overallStatus").textContent =
-                "⚠ Issues detected";
+        const tflintPassed =
+            data.tflint &&
+            data.tflint.passed === true;
 
-            document.getElementById("checkovStatus").textContent =
-                "✕ ISSUES";
+        const gitleaksPassed =
+            data.gitleaks &&
+            data.gitleaks.passed === true;
 
-        }
 
-        document.getElementById("tflintStatus").textContent =
-    data.tflint.passed ? "✓ PASSED" : "✕ ISSUES";
+        /* ================================
+           CHECKOV
+        ================================= */
 
-document.getElementById("gitleaksStatus").textContent =
-    data.gitleaks.passed ? "✓ PASSED" : "✕ ISSUES";
+        const checkovStatus =
+            document.getElementById("checkovStatus");
+
+        checkovStatus.textContent =
+            checkovPassed
+                ? "✓ PASSED"
+                : "✕ ISSUES";
+
+        checkovStatus.className =
+            "card-value " +
+            (checkovPassed ? "success" : "danger");
+
+
+        /* ================================
+           TFLINT
+        ================================= */
+
+        const tflintStatus =
+            document.getElementById("tflintStatus");
+
+        tflintStatus.textContent =
+            tflintPassed
+                ? "✓ PASSED"
+                : "✕ ISSUES";
+
+        tflintStatus.className =
+            "card-value " +
+            (tflintPassed ? "success" : "danger");
+
+
+        /* ================================
+           GITLEAKS
+        ================================= */
+
+        const gitleaksStatus =
+            document.getElementById("gitleaksStatus");
+
+        gitleaksStatus.textContent =
+            gitleaksPassed
+                ? "✓ PASSED"
+                : "✕ ISSUES";
+
+        gitleaksStatus.className =
+            "card-value " +
+            (gitleaksPassed ? "success" : "danger");
+
+
+        /* ================================
+           OVERALL SECURITY SCORE
+        ================================= */
+
+        const allPassed =
+            checkovPassed &&
+            tflintPassed &&
+            gitleaksPassed;
+
+
+        const score =
+            typeof data.score === "number"
+                ? data.score
+                : (
+                    (checkovPassed ? 1 : 0) +
+                    (tflintPassed ? 1 : 0) +
+                    (gitleaksPassed ? 1 : 0)
+                  ) * 100 / 3;
+
+
+        document.getElementById("score").textContent =
+            Math.round(score);
+
+
+        document.getElementById("scoreText").textContent =
+            allPassed
+                ? "Secure"
+                : "Needs Attention";
+
+
+        document.getElementById("overallStatus").textContent =
+            allPassed
+                ? "✓ All security checks passed"
+                : "⚠ Issues detected";
+
+
+        /* ================================
+           SCROLL TO RESULTS
+        ================================= */
 
         results.scrollIntoView({
             behavior: "smooth"
         });
 
-    } catch (error) {
+    }
+
+
+    catch (error) {
 
         document.getElementById("output").textContent =
-            "Unable to complete scan.\n\n" + error.message;
+            "Unable to complete scan.\n\n" +
+            error.message;
 
-    } finally {
+        document.getElementById("overallStatus").textContent =
+            "⚠ Scan failed";
+
+    }
+
+
+    finally {
 
         scanButton.disabled = false;
         loader.style.display = "none";
@@ -759,26 +873,45 @@ document.getElementById("gitleaksStatus").textContent =
     }
 
 });
-let latestReport = "";
+
+
+/* ================================
+   DOWNLOAD SECURITY REPORT
+================================ */
 
 function downloadReport() {
 
     if (!latestReport) {
-        alert("Please run a security scan first.");
+
+        alert(
+            "Please run a security scan first."
+        );
+
         return;
     }
 
+
     const blob = new Blob(
         [latestReport],
-        { type: "text/plain" }
+        {
+            type: "text/plain"
+        }
     );
 
-    const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
 
     link.href = url;
-    link.download = "SecureIaC_Security_Report.txt";
+
+    link.download =
+        "SecureIaC_Security_Report.txt";
+
 
     document.body.appendChild(link);
 
@@ -790,6 +923,8 @@ function downloadReport() {
 }
 
 </script>
+```
+
 
 </body>
 </html>
