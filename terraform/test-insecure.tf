@@ -1,24 +1,22 @@
 provider "aws" {
-  region = "ap-south-1"
+  region     = "us-east-1"
+  access_key = "AKIAIOSFODNN7EXAMPLE" # Hardcoded secret
+  secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" # Hardcoded secret
 }
 
-resource "aws_s3_bucket" "app_data" {
-  bucket = "app-data-prod-8841"
+resource "aws_s3_bucket" "insecure_bucket" {
+  bucket = "my-company-leaked-data-bucket"
+  # Missing public access block and default encryption
 }
 
-
-resource "aws_s3_bucket_public_access_block" "app_data" {
-  bucket            = aws_s3_bucket.app_data.id
-  block_public_acls = false
-}
-
-resource "aws_security_group" "web_sg" {
-  name = "web-sg"
+resource "aws_security_group" "allow_all" {
+  name        = "allow_all"
+  description = "Open to the world"
 
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"] # Overly permissive wildcard access
   }
 }
